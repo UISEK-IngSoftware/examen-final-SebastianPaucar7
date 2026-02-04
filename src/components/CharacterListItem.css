@@ -1,0 +1,17 @@
+#character-list-item img{
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.species-note{
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
+
+/* Estado vacío compartido */
+.empty-state{
+  padding: 2rem;
+  text-align: center;
+  color: var(--ion-color-medium);
+}

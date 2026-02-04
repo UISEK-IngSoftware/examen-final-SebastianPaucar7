@@ -1,6 +1,4 @@
-import MessageListItem from '../components/MessageListItem';
 import { useState } from 'react';
-import { Message, getMessages } from '../data/messages';
 import {
   IonContent,
   IonHeader,
@@ -10,47 +8,88 @@ import {
   IonRefresherContent,
   IonTitle,
   IonToolbar,
-  useIonViewWillEnter
+  useIonViewWillEnter,
+  IonLoading,
+  IonToast,
+  IonText
 } from '@ionic/react';
+
+import { Character } from '../models/Character';
+import { getCharacters } from '../services/futurama.service';
+import CharacterListItem from '../components/CharacterListItem';
+
 import './Home.css';
 
 const Home: React.FC = () => {
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const loadCharacters = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const items = await getCharacters();
+      setCharacters(items);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo cargar la lista de personajes.');
+      setCharacters([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useIonViewWillEnter(() => {
-    const msgs = getMessages();
-    setMessages(msgs);
+    loadCharacters();
   });
 
-  const refresh = (e: CustomEvent) => {
-    setTimeout(() => {
-      e.detail.complete();
-    }, 3000);
+  const refresh = async (e: CustomEvent) => {
+    await loadCharacters();
+    e.detail.complete();
   };
 
   return (
     <IonPage id="home-page">
       <IonHeader>
-        <IonToolbar>
-          <IonTitle>Inbox</IonTitle>
+        <IonToolbar color="primary">
+          <IonTitle>Personajes de Futurama</IonTitle>
         </IonToolbar>
       </IonHeader>
+
       <IonContent fullscreen>
         <IonRefresher slot="fixed" onIonRefresh={refresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent />
         </IonRefresher>
 
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">
-              Inbox
-            </IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <IonLoading
+          isOpen={loading}
+          message="Cargando personajes..."
+          spinner="crescent"
+        />
+
+        <IonToast
+          isOpen={!!error}
+          message={error ?? ''}
+          color="danger"
+          duration={3000}
+          onDidDismiss={() => setError(null)}
+        />
+
+        {!loading && !error && characters.length === 0 && (
+          <div className="empty-state">
+            <IonText>No se encontraron personajes.</IonText>
+          </div>
+        )}
 
         <IonList>
-          {messages.map(m => <MessageListItem key={m.id} message={m} />)}
+          {characters.map((character) => (
+            <CharacterListItem
+              key={character.id}
+              character={character}
+            />
+          ))}
         </IonList>
       </IonContent>
     </IonPage>
